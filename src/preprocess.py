@@ -1,17 +1,24 @@
 """Data access and preprocessing for GOES X-ray flux inputs."""
 from __future__ import annotations
+
 import glob
+import logging
 from pathlib import Path
 from typing import Tuple
+
+import joblib
 import numpy as np
 import pandas as pd
 import streamlit as st
 from sklearn.preprocessing import StandardScaler
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import HISTORY_MINUTES
 
+LOGGER = logging.getLogger("solar_flare_dashboard.preprocess")
 REQUIRED_COLUMNS = ["xrsa_flux", "xrsb_flux"]
+
 
 def clean_flux_frame(df: pd.DataFrame) -> pd.DataFrame:
     """Clean GOES flux data and resample it to one-minute cadence."""
@@ -29,6 +36,7 @@ def clean_flux_frame(df: pd.DataFrame) -> pd.DataFrame:
         clean = clean.ffill(limit=60)
     return clean.dropna()
 
+
 @st.cache_data(show_spinner=False)
 def load_goes_csv(csv_path: str, file_stamp: str) -> pd.DataFrame:
     """Load the local cleaned GOES CSV file."""
@@ -37,6 +45,7 @@ def load_goes_csv(csv_path: str, file_stamp: str) -> pd.DataFrame:
         raise FileNotFoundError(f"GOES data file not found: {path}")
     df = pd.read_csv(path, index_col="time", parse_dates=True)
     return clean_flux_frame(df)
+
 
 @st.cache_data(show_spinner=False)
 def load_latest_goes_netcdf(data_dir: str, cache_stamp: str) -> Tuple[pd.DataFrame, str]:
@@ -48,7 +57,9 @@ def load_latest_goes_netcdf(data_dir: str, cache_stamp: str) -> Tuple[pd.DataFra
     try:
         import xarray as xr
     except ImportError as exc:
-        raise RuntimeError("xarray is required for NetCDF input. Use the CSV source or install xarray.") from exc
+        raise RuntimeError(
+            "xarray is required for NetCDF input. Use the CSV source or install xarray."
+        ) from exc
     files = sorted(glob.glob(str(Path(data_dir) / "**" / "*.nc"), recursive=True))
     if not files:
         raise FileNotFoundError(f"No GOES NetCDF files found under {data_dir}")
@@ -63,9 +74,60 @@ def load_latest_goes_netcdf(data_dir: str, cache_stamp: str) -> Tuple[pd.DataFra
     df = df.set_index("time")
     return clean_flux_frame(df), latest_file
 
+
+@st.cache_resource(show_spinner=False)
+def load_scaler(scaler_path: str, file_stamp: str) -> StandardScaler:
+    """Load the pre-fitted StandardScaler from a joblib pickle file.
+
+    Generate this file once by running:
+        python scripts/build_scaler.py
+    """
+    path = Path(scaler_path)
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Scaler not found at {path}. "
+            "Run 'python scripts/build_scaler.py' to generate it."
+        )
+    scaler = joblib.load(path)
+    LOGGER.info("Loaded scaler from %s", path)
+    return scaler
+
+
+def build_and_save_scaler(csv_path: str, output_path: str) -> StandardScaler:
+    """Build a StandardScaler from the GOES CSV and save it as a .pkl file.
+
+    This is called by scripts/build_scaler.py — not needed at dashboard runtime.
+    """
+    path = Path(csv_path)
+    if not path.exists():
+        raise FileNotFoundError(f"GOES CSV not found: {path}")
+
+    df = pd.read_csv(path, index_col="time", parse_dates=True)
+    df = clean_flux_frame(df)
+
+    # Build sliding windows identical to training
+    windows = []
+    values = df[["xrsa_flux", "xrsb_flux"]].to_numpy()
+    for i in range(len(values) - HISTORY_MINUTES + 1):
+        windows.append(values[i : i + HISTORY_MINUTES])
+
+    x_all = np.array(windows)  # shape: (N, HISTORY_MINUTES, 2)
+    train_size = int(len(x_all) * 0.70)
+    x_train = x_all[:train_size]
+
+    scaler = StandardScaler()
+    scaler.fit(x_train.reshape(-1, x_train.shape[-1]))
+
+    out_path = Path(output_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(scaler, out_path)
+    LOGGER.info("Saved scaler to %s (fitted on %d training windows)", out_path, train_size)
+    return scaler
+
+
 @st.cache_resource(show_spinner=False)
 def build_training_scaler(training_array_path: str, file_stamp: str) -> StandardScaler:
-    """Reconstruct the training scaler from the original chronological split."""
+    """Legacy: reconstruct scaler from X_data.npy. Use load_scaler() instead."""
     path = Path(training_array_path)
     if not path.exists():
         raise FileNotFoundError(f"Training array not found: {path}")
@@ -76,10 +138,13 @@ def build_training_scaler(training_array_path: str, file_stamp: str) -> Standard
     scaler.fit(x_train.reshape(-1, x_train.shape[-1]))
     return scaler
 
+
 def latest_window(df: pd.DataFrame) -> pd.DataFrame:
     """Return the latest 60-minute flux window expected by the CNN."""
     if len(df) < HISTORY_MINUTES:
-        raise ValueError(f"Need at least {HISTORY_MINUTES} clean rows; only {len(df)} are available.")
+        raise ValueError(
+            f"Need at least {HISTORY_MINUTES} clean rows; only {len(df)} are available."
+        )
     return df.tail(HISTORY_MINUTES)
 
 

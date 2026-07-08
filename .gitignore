@@ -4,11 +4,16 @@ venv/
 .venv/
 .env
 
+# Large raw data — do NOT commit
 data/raw/
 data/processed/
 data/*.npy
 
-*.pth
-*.pt
+# Allow trained model weights and scaler
+!models/solar_flare_cnn.pth
+!models/flare_model.pth
+!models/scaler.pkl
+!models/*.json
+
 .ipynb_checkpoints/
 notebooks/

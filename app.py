@@ -30,14 +30,14 @@ from config import (
     REFRESH_INTERVAL_SECONDS,
     SATELLITE_NAME,
     SATELLITE_STATUS,
+    SCALER_CANDIDATES,
     SPLIT_DATASET_CANDIDATES,
-    TRAINING_ARRAY_CANDIDATES,
 )
 from src.history import append_prediction, cached_load_history
 from src.live_data import LiveDataResult, get_live_goes_dataframe
 from src.model_loader import build_model_summary, load_model
 from src.predict import PredictionResult, predict_flare
-from src.preprocess import build_training_scaler, latest_window, load_goes_csv, load_latest_goes_netcdf, netcdf_cache_stamp
+from src.preprocess import load_scaler, latest_window, load_goes_csv, load_latest_goes_netcdf, netcdf_cache_stamp
 from src.utils import compact_percent, file_cache_stamp, file_modified_utc, find_first_existing, format_flux, format_utc, load_json, setup_logging, utc_now
 
 
@@ -125,18 +125,21 @@ def sidebar_controls() -> tuple[str, bool, str]:
 
 @st.cache_data(show_spinner=False)
 def resolve_inputs_cached() -> tuple[str, str, str, str | None]:
-    """Find and cache model, metadata, GOES fallback data, and training array paths."""
+    """Find and cache model, metadata, GOES fallback data, and scaler paths."""
     model_path = find_first_existing(MODEL_CANDIDATES)
     data_path = find_first_existing(DATA_CANDIDATES)
-    training_array_path = find_first_existing(TRAINING_ARRAY_CANDIDATES)
+    scaler_path = find_first_existing(SCALER_CANDIDATES)
     metadata_path = find_first_existing(METADATA_CANDIDATES)
     if model_path is None:
         raise FileNotFoundError("No CNN model found. Expected flare_model.pth or solar_flare_cnn.pth.")
     if data_path is None:
         raise FileNotFoundError("No fallback GOES CSV data found. Expected goes_xrs_1min_clean.csv.")
-    if training_array_path is None:
-        raise FileNotFoundError("X_data.npy is required to reconstruct the training scaler.")
-    return str(model_path), str(data_path), str(training_array_path), str(metadata_path) if metadata_path else None
+    if scaler_path is None:
+        raise FileNotFoundError(
+            "Scaler not found (models/scaler.pkl). "
+            "Run: python scripts/build_scaler.py"
+        )
+    return str(model_path), str(data_path), str(scaler_path), str(metadata_path) if metadata_path else None
 
 
 @st.cache_data(show_spinner=False)
@@ -150,25 +153,25 @@ def load_metadata_cached(metadata_path: str | None, file_stamp: str) -> dict:
 @st.cache_resource(show_spinner=False)
 def load_inference_bundle(
     model_path: str,
-    training_array_path: str,
+    scaler_path: str,
     metadata_path: str | None,
     model_stamp: str,
-    training_stamp: str,
+    scaler_stamp: str,
     metadata_stamp: str,
 ) -> tuple:
     """Load and cache the CNN, scaler, and metadata used for inference."""
     metadata = load_metadata_cached(metadata_path, metadata_stamp)
     metadata_key = json.dumps(metadata, sort_keys=True)
     model, device = load_model(model_path, metadata_key, model_stamp)
-    scaler = build_training_scaler(training_array_path, training_stamp)
-    LOGGER.info("Inference bundle ready; model=%s training_array=%s device=%s", model_path, training_array_path, device)
+    scaler = load_scaler(scaler_path, scaler_stamp)
+    LOGGER.info("Inference bundle ready; model=%s scaler=%s device=%s", model_path, scaler_path, device)
     return model, device, scaler, metadata, metadata_key
 
 
 def resolve_inputs() -> tuple[Path, Path, Path, Path | None]:
-    """Find model, metadata, GOES fallback data, and training arrays."""
-    model_path, data_path, training_array_path, metadata_path = resolve_inputs_cached()
-    return Path(model_path), Path(data_path), Path(training_array_path), Path(metadata_path) if metadata_path else None
+    """Find model, metadata, GOES fallback data, and pre-fitted scaler."""
+    model_path, data_path, scaler_path, metadata_path = resolve_inputs_cached()
+    return Path(model_path), Path(data_path), Path(scaler_path), Path(metadata_path) if metadata_path else None
 
 
 def load_selected_source(source: str, fallback_data_path: Path) -> tuple[pd.DataFrame, str, str, str | None]:
@@ -357,17 +360,17 @@ def render_live_dashboard(data_source: str) -> None:
     top_b.write(f"Current UTC Time: {format_utc(utc_now())}")
 
     try:
-        model_path, fallback_data_path, training_array_path, metadata_path = resolve_inputs()
+        model_path, fallback_data_path, scaler_path, metadata_path = resolve_inputs()
         model_stamp = file_cache_stamp(model_path)
-        training_stamp = file_cache_stamp(training_array_path)
+        scaler_stamp = file_cache_stamp(scaler_path)
         metadata_stamp = file_cache_stamp(metadata_path)
 
         model, device, scaler, metadata, metadata_key = load_inference_bundle(
             str(model_path),
-            str(training_array_path),
+            str(scaler_path),
             str(metadata_path) if metadata_path else None,
             model_stamp,
-            training_stamp,
+            scaler_stamp,
             metadata_stamp,
         )
 
