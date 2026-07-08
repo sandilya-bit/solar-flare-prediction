@@ -15,5 +15,8 @@ data/*.npy
 !models/scaler.pkl
 !models/*.json
 
+# Ignore logs
+logs/
+
 .ipynb_checkpoints/
 notebooks/
