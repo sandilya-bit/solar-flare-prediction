@@ -68,34 +68,46 @@ def cached_live_goes_data(url: str) -> LiveDataResult:
 
 
 def apply_theme(theme: str) -> None:
-    """Apply dashboard CSS styling."""
+    """Apply dashboard CSS styling by reading static CSS files and injecting theme variables."""
     dark = theme == "Dark"
     background = "#08111f" if dark else "#f5f7fb"
     panel = "#101b2f" if dark else "#ffffff"
     text = "#f8f9fa" if dark else "#17202a"
-    muted = "#9fb3c8" if dark else "#5c6773"
-    border = "#263a59" if dark else "#d9e2ec"
+    muted = "#7a90a4" if dark else "#4a5568"
+    border = "#1f3047" if dark else "#cbd5e1"
+    shadow = "rgba(0, 0, 0, 0.4)" if dark else "rgba(148, 163, 184, 0.15)"
+
+    # Read base styling
+    style_path = APP_DIR / "assets" / "style.css"
+    style_content = ""
+    if style_path.exists():
+        with style_path.open("r", encoding="utf-8") as f:
+            style_content = f.read()
+
+    # Read mobile specific overrides
+    mobile_path = APP_DIR / "assets" / "mobile.css"
+    mobile_content = ""
+    if mobile_path.exists():
+        with mobile_path.open("r", encoding="utf-8") as f:
+            mobile_content = f.read()
+
     st.markdown(
         f"""
 <style>
-.stApp {{ background: {background}; color: {text}; }}
-[data-testid="stSidebar"] {{ background: {panel}; border-right: 1px solid {border}; }}
-.dashboard-card {{ background: {panel}; color: {text}; border: 1px solid {border}; border-radius: 8px; padding: 18px 20px; min-height: 128px; }}
-.small-label {{ color: {muted}; font-size: 0.86rem; text-transform: uppercase; }}
-.big-value {{ font-size: 2.1rem; font-weight: 750; margin-top: 6px; }}
-.status-dot {{ display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #2fb344; margin-right: 8px; }}
-.status-dot-offline {{ display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #e03131; margin-right: 8px; }}
-.class-card {{ border-radius: 8px; padding: 22px; color: white; text-align: center; min-height: 148px; }}
-.class-letter {{ font-size: 4rem; font-weight: 800; line-height: 1; }}
-.class-caption {{ font-size: 1rem; opacity: 0.92; margin-top: 8px; }}
-.forecast-card {{ background: {panel}; border: 1px solid {border}; border-radius: 8px; padding: 24px; text-align: center; }}
-.forecast-title {{ font-size: 0.95rem; color: {muted}; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }}
-.forecast-value {{ font-size: 3.5rem; font-weight: 800; color: #ff922b; margin: 12px 0; }}
-.recent-events-table {{ width: 100%; border-collapse: collapse; }}
-.recent-events-table th {{ color: {muted}; text-transform: uppercase; font-size: 0.75rem; padding: 12px 8px; border-bottom: 1px solid {border}; text-align: left; }}
-.recent-events-table td {{ padding: 12px 8px; border-bottom: 1px solid {border}; color: {text}; }}
-.recent-events-table tr:hover {{ background-color: rgba(255, 146, 43, 0.05); }}
-.subtitle {{ color: {muted}; font-size: 0.95rem; margin-top: -10px; margin-bottom: 20px; }}
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {{
+  --background-color: {background};
+  --panel-color: {panel};
+  --text-color: {text};
+  --muted-color: {muted};
+  --border-color: {border};
+  --shadow-color: {shadow};
+}}
+
+{style_content}
+
+{mobile_content}
 </style>
 """,
         unsafe_allow_html=True,
@@ -233,7 +245,8 @@ def render_recent_events() -> None:
     display_df["Timestamp"] = pd.to_datetime(display_df["Timestamp"], utc=True, errors="coerce")
     display_df = display_df.sort_values("Timestamp", ascending=False).head(10)
     
-    html_table = '<table class="recent-events-table"><thead><tr>'
+    html_table = '<div class="recent-events-table-wrapper">'
+    html_table += '<table class="recent-events-table"><thead><tr>'
     html_table += '<th>Time (UTC)</th><th>Class</th><th>Peak Flux (W/m²)</th><th>Confidence</th></tr></thead><tbody>'
     
     for _, row in display_df.iterrows():
@@ -245,6 +258,7 @@ def render_recent_events() -> None:
         html_table += f'<tr><td>{time_str}</td><td><span style="background: {color}; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold;">{pred}</span></td><td>{flux_str}</td><td>{conf_str}</td></tr>'
     
     html_table += '</tbody></table>'
+    html_table += '</div>'
     st.markdown(html_table, unsafe_allow_html=True)
 
 

@@ -1,0 +1,308 @@
+/* ==========================================================================
+   DESKTOP MASTER STYLESHEET (style.css)
+   Project: Solar Flare Prediction Dashboard (Aditya-L1 SoLEXS)
+   Aesthetics: NASA-style, Dark/Light Hybrid Glassmorphism
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. CORE GLOBAL STYLES & TYPOGRAPHY
+   -------------------------------------------------------------------------- */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.stApp {
+  background: var(--background-color) !important;
+  color: var(--text-color) !important;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Headings font overrides */
+h1, h2, h3, h4, h5, h6, [data-testid="stHeader"] {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Custom Subtitle Styling */
+.subtitle {
+  color: var(--muted-color);
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin-top: -16px;
+  margin-bottom: 24px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* --------------------------------------------------------------------------
+   2. STREAMLIT FRAMEWORK COMPONENTS OVERRIDES (Text Visibility & Contrast)
+   -------------------------------------------------------------------------- */
+
+/* Sidebar Navigation & Controls Container */
+[data-testid="stSidebar"] {
+  background: var(--panel-color) !important;
+  border-right: 1px solid var(--border-color) !important;
+  box-shadow: 4px 0 24px var(--shadow-color);
+  transition: all 0.3s ease;
+}
+
+/* Sidebar Headings & Captions */
+[data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3 {
+  color: var(--text-color) !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown p, [data-testid="stSidebar"] p {
+  color: var(--text-color) !important;
+  font-size: 0.95rem;
+}
+
+[data-testid="stSidebar"] .small-label, [data-testid="stSidebar"] caption {
+  color: var(--muted-color) !important;
+}
+
+/* Native Streamlit Tabs Style Tuning */
+button[data-baseweb="tab"] {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 600 !important;
+  color: var(--muted-color) !important;
+  border-bottom: 2px solid transparent !important;
+  transition: all 0.25s ease !important;
+  padding: 8px 16px !important;
+}
+
+button[data-baseweb="tab"]:hover {
+  color: var(--text-color) !important;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+  color: #ff922b !important; /* Solar brand color */
+  border-bottom: 2px solid #ff922b !important;
+  background-color: rgba(255, 146, 43, 0.05) !important;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Metrics and Parameter Labels */
+div[data-testid="stMetricValue"] {
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  color: var(--text-color) !important;
+}
+
+div[data-testid="stMetricLabel"] {
+  color: var(--muted-color) !important;
+  font-size: 0.85rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Streamlit Forms, Selectboxes, and Radios visibility */
+div[data-baseweb="select"] > div {
+  background-color: var(--panel-color) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-color) !important;
+  border-radius: 6px !important;
+}
+
+div[role="radiogroup"] label {
+  color: var(--text-color) !important;
+  font-weight: 500 !important;
+}
+
+/* --------------------------------------------------------------------------
+   3. CUSTOM CARDS AND WIDGETS
+   -------------------------------------------------------------------------- */
+
+/* Base Dashboard Card */
+.dashboard-card {
+  background: var(--panel-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px 24px;
+  min-height: 140px;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px var(--shadow-color);
+  border-color: #ff922b; /* Glow to match solar brand */
+}
+
+/* Metric card labels and big numbers */
+.small-label {
+  color: var(--muted-color);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.big-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.3rem;
+  font-weight: 800;
+  color: var(--text-color);
+  line-height: 1.1;
+  margin: 6px 0;
+  letter-spacing: -0.01em;
+}
+
+/* Status Indicator Dot with Pulse Animation */
+.status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2fb344;
+  margin-right: 8px;
+  box-shadow: 0 0 8px rgba(47, 179, 68, 0.6);
+  animation: pulse-green 2s infinite alternate;
+}
+
+.status-dot-offline {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e03131;
+  margin-right: 8px;
+  box-shadow: 0 0 8px rgba(224, 49, 49, 0.6);
+  animation: pulse-red 2s infinite alternate;
+}
+
+@keyframes pulse-green {
+  0% { transform: scale(0.9); box-shadow: 0 0 4px rgba(47, 179, 68, 0.4); }
+  100% { transform: scale(1.15); box-shadow: 0 0 12px rgba(47, 179, 68, 0.8); }
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(0.9); box-shadow: 0 0 4px rgba(224, 49, 49, 0.4); }
+  100% { transform: scale(1.15); box-shadow: 0 0 12px rgba(224, 49, 49, 0.8); }
+}
+
+/* Class Level Indicator Card */
+.class-card {
+  border-radius: 12px;
+  padding: 24px;
+  color: #ffffff !important;
+  text-align: center;
+  min-height: 140px;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.class-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 30px var(--shadow-color);
+}
+
+.class-letter {
+  font-family: 'Outfit', sans-serif;
+  font-size: 4.5rem;
+  font-weight: 900;
+  line-height: 1;
+  margin: 0;
+  letter-spacing: -0.03em;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.class-caption {
+  font-size: 0.95rem;
+  font-weight: 500;
+  opacity: 0.95;
+  margin-top: 6px;
+  letter-spacing: 0.03em;
+}
+
+/* 6-Hour Forecast Card styling */
+.forecast-card {
+  background: var(--panel-color);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 20px var(--shadow-color);
+  transition: all 0.3s ease;
+}
+
+.forecast-card:hover {
+  border-color: #ff922b;
+  box-shadow: 0 8px 24px var(--shadow-color);
+}
+
+.forecast-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted-color);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.forecast-value {
+  font-family: 'Outfit', sans-serif;
+  font-size: 3.8rem;
+  font-weight: 900;
+  color: #ff922b;
+  margin: 8px 0;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* --------------------------------------------------------------------------
+   4. EVENT AND HISTORY TABLES
+   -------------------------------------------------------------------------- */
+
+/* Custom styled NOAA/Aditya events table */
+.recent-events-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.recent-events-table th {
+  background-color: var(--panel-color);
+  color: var(--text-color);
+  font-family: 'Outfit', sans-serif;
+  text-transform: uppercase;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 14px 16px;
+  border-bottom: 2px solid var(--border-color);
+  text-align: left;
+}
+
+.recent-events-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  transition: background-color 0.2s ease;
+}
+
+.recent-events-table tr:last-child td {
+  border-bottom: none;
+}
+
+.recent-events-table tr:hover td {
+  background-color: rgba(255, 146, 43, 0.06);
+}
