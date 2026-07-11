@@ -41,6 +41,10 @@ from src.predict import PredictionResult, predict_flare
 from src.preprocess import load_scaler, latest_window, load_goes_csv, load_latest_goes_netcdf, netcdf_cache_stamp
 from src.utils import compact_percent, file_cache_stamp, file_modified_utc, find_first_existing, format_flux, format_utc, load_json, setup_logging, utc_now
 
+# Resolve at module level — __file__ may not exist inside functions when Streamlit
+# Cloud executes the script through its own loader.
+_ASSETS_DIR = Path(__file__).resolve().parent / "assets" if "__file__" in dir() else APP_DIR / "assets"
+
 
 def _supports_fragment_auto_refresh() -> bool:
     """Return True when native st.fragment(run_every=...) is available."""
@@ -78,12 +82,10 @@ def apply_theme(theme: str) -> None:
     border = "#1f3047" if dark else "#cbd5e1"
     shadow = "rgba(0, 0, 0, 0.4)" if dark else "rgba(148, 163, 184, 0.15)"
 
-    # Resolve the assets directory relative to this file so it works on any host
-    # (local dev, Docker, Streamlit Cloud). Falls back to APP_DIR from config.
-    base_dir = Path(__file__).resolve().parent
-    assets_dir = base_dir / "assets"
-    if not assets_dir.exists() and APP_DIR:
-        assets_dir = APP_DIR / "assets"
+    # Use the module-level _ASSETS_DIR (computed once with __file__ at import
+    # time) so we never reference __file__ inside a function where it may be
+    # undefined in Streamlit Cloud's execution model.
+    assets_dir = _ASSETS_DIR
 
     def _read_css(filename: str) -> str:
         css_path = assets_dir / filename
