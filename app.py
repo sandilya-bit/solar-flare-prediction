@@ -131,7 +131,7 @@ def sidebar_controls() -> tuple[str, bool, str]:
     default_index = source_keys.index(DATA_SOURCE) if DATA_SOURCE in source_keys else 0
     selected_label = st.sidebar.radio("Data source", [SOURCE_LABELS[key] for key in source_keys], index=default_index)
     selected_source = next(key for key, label in SOURCE_LABELS.items() if label == selected_label)
-    refresh_clicked = st.sidebar.button("Refresh now", use_container_width=True)
+    refresh_clicked = st.sidebar.button("Refresh now", type="primary")
     st.sidebar.caption(f"Auto-refresh every {REFRESH_INTERVAL_SECONDS} seconds (no manual action required).")
     st.sidebar.divider()
     st.sidebar.subheader("Project Information")
@@ -458,7 +458,7 @@ def render_live_dashboard(data_source: str) -> None:
         with chart_col:
             st.subheader("Live X-ray Flux (Last 24 Hours)")
             chart_window = df.tail(360)
-            st.plotly_chart(flux_line_chart(chart_window), use_container_width=True)
+            st.plotly_chart(flux_line_chart(chart_window), width="stretch")
             st.caption(f"Auto-updates every {REFRESH_INTERVAL_SECONDS} seconds when new NOAA data is available.")
         
         with forecast_col:
@@ -472,7 +472,7 @@ def render_live_dashboard(data_source: str) -> None:
 
         tab_live, tab_history, tab_model, tab_pipeline = st.tabs(["Probability Distribution", "Prediction History", "Model Summary", "Data Pipeline"])
         with tab_live:
-            st.plotly_chart(probability_bar_chart(result.probabilities, result.predicted_class), use_container_width=True)
+            st.plotly_chart(probability_bar_chart(result.probabilities, result.predicted_class), width="stretch")
             st.caption("A-class display is derived from background B output when observed flux is below B threshold.")
 
         with tab_history:
@@ -481,7 +481,7 @@ def render_live_dashboard(data_source: str) -> None:
                 display_df = history_df.copy()
                 display_df["Flux"] = display_df["Flux"].map(lambda value: f"{float(value):.3e}" if pd.notna(value) else "")
                 display_df["Confidence"] = display_df["Confidence"].map(lambda value: f"{float(value) * 100:.1f}%" if pd.notna(value) else "")
-                st.dataframe(display_df.sort_values("Timestamp", ascending=False).tail(50), use_container_width=True, hide_index=True)
+                st.dataframe(display_df.sort_values("Timestamp", ascending=False).tail(50), width="stretch", hide_index=True)
             else:
                 st.info("Prediction history will appear after the first successful dashboard run.")
 
