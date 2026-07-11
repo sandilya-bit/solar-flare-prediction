@@ -17,6 +17,7 @@ except ImportError:
 from src.alerts import alert_for_class, class_color, render_alert
 from src.charts import flux_line_chart, probability_bar_chart
 from config import (
+    APP_DIR,
     APP_TITLE,
     DATA_CANDIDATES,
     DATA_SOURCE,
@@ -77,19 +78,24 @@ def apply_theme(theme: str) -> None:
     border = "#1f3047" if dark else "#cbd5e1"
     shadow = "rgba(0, 0, 0, 0.4)" if dark else "rgba(148, 163, 184, 0.15)"
 
-    # Read base styling
-    style_path = APP_DIR / "assets" / "style.css"
-    style_content = ""
-    if style_path.exists():
-        with style_path.open("r", encoding="utf-8") as f:
-            style_content = f.read()
+    # Resolve the assets directory relative to this file so it works on any host
+    # (local dev, Docker, Streamlit Cloud). Falls back to APP_DIR from config.
+    base_dir = Path(__file__).resolve().parent
+    assets_dir = base_dir / "assets"
+    if not assets_dir.exists() and APP_DIR:
+        assets_dir = APP_DIR / "assets"
 
-    # Read mobile specific overrides
-    mobile_path = APP_DIR / "assets" / "mobile.css"
-    mobile_content = ""
-    if mobile_path.exists():
-        with mobile_path.open("r", encoding="utf-8") as f:
-            mobile_content = f.read()
+    def _read_css(filename: str) -> str:
+        css_path = assets_dir / filename
+        try:
+            if css_path.exists():
+                return css_path.read_text(encoding="utf-8")
+        except Exception:
+            LOGGER.exception("Failed reading CSS file %s", css_path)
+        return ""
+
+    style_content = _read_css("style.css")
+    mobile_content = _read_css("mobile.css")
 
     st.markdown(
         f"""

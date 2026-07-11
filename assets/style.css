@@ -2,6 +2,8 @@
    DESKTOP MASTER STYLESHEET (style.css)
    Project: Solar Flare Prediction Dashboard (Aditya-L1 SoLEXS)
    Aesthetics: NASA-style, Dark/Light Hybrid Glassmorphism
+   Strategy : Fluid sizing via clamp() so the layout scales smoothly on ANY
+              screen size and nothing gets clipped or hidden.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -13,26 +15,45 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Keep the whole app horizontally contained so nothing is cut off. */
+html, body, .stApp {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
 .stApp {
   background: var(--background-color) !important;
   color: var(--text-color) !important;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-/* Headings font overrides */
+/* Fluid main content padding: scales with the viewport. */
+.block-container {
+  padding-left: clamp(0.75rem, 3vw, 3rem) !important;
+  padding-right: clamp(0.75rem, 3vw, 3rem) !important;
+  padding-top: clamp(1rem, 2vw, 2rem) !important;
+  padding-bottom: clamp(1.5rem, 2vw, 2.5rem) !important;
+  max-width: 100% !important;
+}
+
+/* Headings font overrides — fluid scaling */
 h1, h2, h3, h4, h5, h6, [data-testid="stHeader"] {
   font-family: 'Outfit', sans-serif !important;
   font-weight: 700 !important;
   letter-spacing: -0.02em !important;
 }
 
+h1 { font-size: clamp(1.5rem, 4vw, 2.6rem) !important; line-height: 1.15 !important; }
+h2 { font-size: clamp(1.2rem, 2.8vw, 1.9rem) !important; }
+h3 { font-size: clamp(1.05rem, 2vw, 1.45rem) !important; }
+
 /* Custom Subtitle Styling */
 .subtitle {
   color: var(--muted-color);
-  font-size: 1.05rem;
+  font-size: clamp(0.8rem, 1.4vw, 1.05rem);
   font-weight: 500;
-  margin-top: -16px;
-  margin-bottom: 24px;
+  margin-top: clamp(-12px, -1vw, -16px);
+  margin-bottom: clamp(14px, 1.5vw, 24px);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -89,11 +110,13 @@ div[data-testid="stMetricValue"] {
   font-family: 'Outfit', sans-serif !important;
   font-weight: 800 !important;
   color: var(--text-color) !important;
+  font-size: clamp(1rem, 2.2vw, 1.4rem) !important;
+  word-break: break-word !important;
 }
 
 div[data-testid="stMetricLabel"] {
   color: var(--muted-color) !important;
-  font-size: 0.85rem !important;
+  font-size: clamp(0.72rem, 1.2vw, 0.85rem) !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
 }
@@ -121,13 +144,16 @@ div[role="radiogroup"] label {
   color: var(--text-color);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 20px 24px;
-  min-height: 140px;
+  padding: clamp(14px, 1.8vw, 22px) clamp(16px, 2vw, 26px);
+  min-height: clamp(110px, 14vw, 150px);
   box-shadow: 0 4px 20px var(--shadow-color);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
 }
 
 .dashboard-card:hover {
@@ -139,7 +165,7 @@ div[role="radiogroup"] label {
 /* Metric card labels and big numbers */
 .small-label {
   color: var(--muted-color);
-  font-size: 0.82rem;
+  font-size: clamp(0.72rem, 1.2vw, 0.82rem);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -148,12 +174,13 @@ div[role="radiogroup"] label {
 
 .big-value {
   font-family: 'Outfit', sans-serif;
-  font-size: 2.3rem;
+  font-size: clamp(1.5rem, 3.4vw, 2.3rem);
   font-weight: 800;
   color: var(--text-color);
   line-height: 1.1;
   margin: 6px 0;
   letter-spacing: -0.01em;
+  word-break: break-word;
 }
 
 /* Status Indicator Dot with Pulse Animation */
@@ -192,16 +219,19 @@ div[role="radiogroup"] label {
 /* Class Level Indicator Card */
 .class-card {
   border-radius: 12px;
-  padding: 24px;
+  padding: clamp(16px, 2vw, 24px);
   color: #ffffff !important;
   text-align: center;
-  min-height: 140px;
+  min-height: clamp(110px, 14vw, 150px);
   box-shadow: 0 4px 20px var(--shadow-color);
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
 }
 
 .class-card:hover {
@@ -211,7 +241,7 @@ div[role="radiogroup"] label {
 
 .class-letter {
   font-family: 'Outfit', sans-serif;
-  font-size: 4.5rem;
+  font-size: clamp(2.8rem, 6.5vw, 4.5rem);
   font-weight: 900;
   line-height: 1;
   margin: 0;
@@ -220,7 +250,7 @@ div[role="radiogroup"] label {
 }
 
 .class-caption {
-  font-size: 0.95rem;
+  font-size: clamp(0.8rem, 1.4vw, 0.95rem);
   font-weight: 500;
   opacity: 0.95;
   margin-top: 6px;
@@ -232,10 +262,13 @@ div[role="radiogroup"] label {
   background: var(--panel-color);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 24px;
+  padding: clamp(16px, 2vw, 24px);
   text-align: center;
   box-shadow: 0 4px 20px var(--shadow-color);
   transition: all 0.3s ease;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
 }
 
 .forecast-card:hover {
@@ -245,7 +278,7 @@ div[role="radiogroup"] label {
 
 .forecast-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 0.85rem;
+  font-size: clamp(0.72rem, 1.2vw, 0.85rem);
   color: var(--muted-color);
   font-weight: 600;
   text-transform: uppercase;
@@ -255,7 +288,7 @@ div[role="radiogroup"] label {
 
 .forecast-value {
   font-family: 'Outfit', sans-serif;
-  font-size: 3.8rem;
+  font-size: clamp(2.4rem, 5.5vw, 3.8rem);
   font-weight: 900;
   color: #ff922b;
   margin: 8px 0;
@@ -268,6 +301,15 @@ div[role="radiogroup"] label {
    -------------------------------------------------------------------------- */
 
 /* Custom styled NOAA/Aditya events table */
+.recent-events-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-top: 8px;
+}
+
 .recent-events-table {
   width: 100%;
   border-collapse: separate;
@@ -283,20 +325,22 @@ div[role="radiogroup"] label {
   color: var(--text-color);
   font-family: 'Outfit', sans-serif;
   text-transform: uppercase;
-  font-size: 0.76rem;
+  font-size: clamp(0.68rem, 1.1vw, 0.76rem);
   font-weight: 700;
   letter-spacing: 0.08em;
-  padding: 14px 16px;
+  padding: clamp(10px, 1.4vw, 14px) clamp(10px, 1.4vw, 16px);
   border-bottom: 2px solid var(--border-color);
   text-align: left;
+  white-space: nowrap;
 }
 
 .recent-events-table td {
-  padding: 14px 16px;
+  padding: clamp(10px, 1.4vw, 14px) clamp(10px, 1.4vw, 16px);
   border-bottom: 1px solid var(--border-color);
   color: var(--text-color);
-  font-size: 0.9rem;
+  font-size: clamp(0.78rem, 1.2vw, 0.9rem);
   transition: background-color 0.2s ease;
+  white-space: nowrap;
 }
 
 .recent-events-table tr:last-child td {
@@ -305,4 +349,31 @@ div[role="radiogroup"] label {
 
 .recent-events-table tr:hover td {
   background-color: rgba(255, 146, 43, 0.06);
+}
+
+/* --------------------------------------------------------------------------
+   5. STREAMLIT CHARTS — KEEP FULLY VISIBLE & RESPONSIVE
+   -------------------------------------------------------------------------- */
+
+/* Make sure Plotly charts never overflow horizontally. */
+.js-plotly-plot, .plot-container, .svg-container {
+  max-width: 100% !important;
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   6. RESPONSIVE COLUMN BEHAVIOR (auto stack on small screens)
+   -------------------------------------------------------------------------- */
+@media screen and (max-width: 768px) {
+  [data-testid="column"] {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    margin-bottom: 16px !important;
+  }
+}
+
+/* Hide nothing — make tables scroll instead of clipping. */
+[data-testid="stDataFrame"], .stDataFrame {
+  max-width: 100% !important;
+  overflow-x: auto;
 }
