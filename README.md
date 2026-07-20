@@ -1,6 +1,8 @@
 # Solar Flare Prediction Dashboard
 
 A real-time solar flare prediction system using deep learning and NOAA satellite data.
+https://solar-flare-prediction-xrexehawlkmvueretyrj8t.streamlit.app/ 
+
 
 ---
 
