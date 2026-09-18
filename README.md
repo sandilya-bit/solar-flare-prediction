@@ -8,7 +8,7 @@
 [![Data](https://img.shields.io/badge/data-NOAA%20GOES%20XRS-1C7ED6)](https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json)
 [![Live app](https://img.shields.io/badge/live%20app-Streamlit%20Cloud-FF922B?logo=streamlit&logoColor=white)](https://solar-flare-prediction-xrexehawlkmvueretyrj8t.streamlit.app/)
 
-**Live app →** <https://solar-flare-prediction-xrexehawlkmvueretyrj8t.streamlit.app/>
+**Live app →** https://solar-flare-prediction-yhpdpewmxy6jqqd7kcjrwj.streamlit.app/
 *(free Streamlit Community Cloud instance — if it has gone to sleep, the first visit takes about 30 seconds to wake)*
 
 This dashboard reads the **two GOES X-ray Sensor channels** (XRS-A 0.05–0.4 nm and XRS-B 0.1–0.8 nm) at one-minute cadence, feeds the most recent **60-minute window** through a 1D convolutional neural network, and reports the **flare class expected in the next hour** — alongside what is happening right now. It keeps working when NOAA is unreachable, and it teaches a first-time visitor how to read every number on the screen.
