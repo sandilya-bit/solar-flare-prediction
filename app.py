@@ -16,6 +16,7 @@ except ImportError:
 
 from src.alerts import alert_for_class, class_color, render_alert
 from src.charts import flux_line_chart, probability_bar_chart
+from src.education import render_flare_basics, render_learn_tab
 from config import (
     APP_DIR,
     APP_TITLE,
@@ -117,6 +118,37 @@ def apply_theme(theme: str) -> None:
 
 {mobile_content}
 </style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_loading_screen() -> None:
+    """Show a themed boot screen once per session.
+
+    The CSS owns the timing: the overlay animates itself out and becomes
+    non-interactive, so no JavaScript or extra rerun is required. It is emitted
+    once per session, so theme changes and auto-refreshes never re-show it.
+    """
+    if st.session_state.get("boot_splash_shown"):
+        return
+    st.session_state["boot_splash_shown"] = True
+    st.markdown(
+        """
+<div class="boot-splash" role="status" aria-live="polite" aria-label="Loading solar flare dashboard">
+  <div class="boot-inner">
+    <div class="boot-orbit"><span class="boot-core"></span></div>
+    <div class="boot-title">Solar Flare Dashboard</div>
+    <div class="boot-sub">Aditya-L1 SoLEXS &middot; GOES XRS nowcasting</div>
+    <div class="boot-bar"><span></span></div>
+    <div class="boot-steps">
+      <span>Linking NOAA GOES X-ray feed</span>
+      <span>Loading CNN checkpoint and scaler</span>
+      <span>Rendering live telemetry</span>
+    </div>
+    <div class="boot-hint">First load downloads NOAA data and warms the model &mdash; later refreshes are instant.</div>
+  </div>
+</div>
 """,
         unsafe_allow_html=True,
     )
@@ -470,7 +502,9 @@ def render_live_dashboard(data_source: str) -> None:
         st.subheader("Recent Flare Events")
         render_recent_events()
 
-        tab_live, tab_history, tab_model, tab_pipeline = st.tabs(["Probability Distribution", "Prediction History", "Model Summary", "Data Pipeline"])
+        tab_live, tab_history, tab_model, tab_pipeline, tab_learn = st.tabs(
+            ["Probability Distribution", "Prediction History", "Model Summary", "Data Pipeline", "Solar Flare 101"]
+        )
         with tab_live:
             st.plotly_chart(probability_bar_chart(result.probabilities, result.predicted_class), width="stretch")
             st.caption("A-class display is derived from background B output when observed flux is below B threshold.")
@@ -504,6 +538,9 @@ def render_live_dashboard(data_source: str) -> None:
             st.write("4. Reuse the existing preprocessing and training scaler before inference.")
             st.write("5. Cache model loading, save prediction history, and refresh automatically.")
 
+        with tab_learn:
+            render_learn_tab(result, result.probabilities)
+
     except Exception as exc:
         LOGGER.exception("Dashboard failed")
         st.error(f"Dashboard could not load: {exc}")
@@ -533,8 +570,10 @@ def main() -> None:
         st.cache_data.clear()
         LOGGER.info("Manual refresh requested; cache cleared.")
 
-    st.markdown(f"# ☀️ {APP_TITLE}")
+    render_loading_screen()
+    st.markdown(f"# {APP_TITLE}")
     st.markdown("<div class='subtitle'>Aditya-L1 SoLEXS</div>", unsafe_allow_html=True)
+    render_flare_basics()
 
     active_source = st.session_state["dashboard_data_source"]
 

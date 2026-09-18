@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>CSS aspect-ratio verification harness</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #05080f; color: #e6edf6; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .grid { display: flex; flex-direction: column; gap: 20px; padding: 22px; align-items: flex-start; }
+  .cell { background: #0b1322; border: 1px solid #1f3047; border-radius: 10px; padding: 10px; box-sizing: border-box; max-width: 100%; }
+  .cell h2 { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #ff922b; }
+  .shot { position: relative; overflow: hidden; border-radius: 6px; border: 1px solid #23364f; }
+  .shot iframe { border: 0; transform-origin: top left; display: block; background: #08111f; }
+  .hint { padding: 10px 22px 0; color: #7a90a4; }
+</style>
+</head>
+<body>
+<div class="hint">Each frame below is a real viewport of the listed size, scaled to fit, loading <code>style.css</code> + <code>mobile.css</code> exactly as app.py injects them.</div>
+<div class="grid" id="grid"></div>
+
+<script>
+// viewport size + a display scale cap (frames are always shrunk to fit the viewer)
+const DEVICES = [
+  { label: "32:9 super-wide 5120x1440", w: 5120, h: 1440, cap: 0.20 },
+  { label: "21:9 ultra-wide 3440x1440", w: 3440, h: 1440, cap: 0.30 },
+  { label: "16:9 desktop 1920x1080", w: 1920, h: 1080, cap: 0.42 },
+  { label: "16:9 short laptop 1366x768", w: 1366, h: 768, cap: 0.52 },
+  { label: "portrait monitor 1080x1400", w: 1080, h: 1400, cap: 0.40 },
+  { label: "tall phone 390x844", w: 390, h: 844, cap: 0.42 },
+  { label: "landscape phone 844x390", w: 844, h: 390, cap: 0.52 },
+  { label: "boot splash 1280x720", w: 1280, h: 720, cap: 0.45, mode: "splash" },
+];
+
+const isEmbed = new URLSearchParams(location.search).has("embed");
+const paneWidth = () => Math.max(300, document.documentElement.clientWidth - 90);
+
+function layout() {
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+  for (const { label, w, h, cap, mode } of DEVICES) {
+    const s = Math.min(cap, paneWidth() / w);          // always fits the viewer
+    const src = "?embed=1" + (mode ? `&mode=${mode}` : "");
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.innerHTML = `<h2>${label} <span style="color:#7a90a4">(x${s.toFixed(2)})</span></h2>
+      <div class="shot" style="width:${Math.round(w * s)}px;height:${Math.round(h * s)}px">
+      <iframe src="${src}" width="${w}" height="${h}" loading="lazy" style="transform:scale(${s})"></iframe></div>`;
+    grid.appendChild(cell);
+  }
+}
+
+if (!isEmbed) {
+  layout();
+  addEventListener("resize", layout);
+}
+</script>
+
+<!-- ===================== SIMULATED STREAMLIT DASHBOARD ===================== -->
+<!-- Splash markup mirrors render_loading_screen() in app.py -->
+<template id="splash-source">
+<div class="boot-splash" role="status">
+  <div class="boot-inner">
+    <div class="boot-orbit"><span class="boot-core"></span></div>
+    <div class="boot-title">Solar Flare Dashboard</div>
+    <div class="boot-sub">Aditya-L1 SoLEXS &middot; GOES XRS nowcasting</div>
+    <div class="boot-bar"><span></span></div>
+    <div class="boot-steps">
+      <span>Linking NOAA GOES X-ray feed</span>
+      <span>Loading CNN checkpoint and scaler</span>
+      <span>Rendering live telemetry</span>
+    </div>
+    <div class="boot-hint">First load downloads NOAA data and warms the model &mdash; later refreshes are instant.</div>
+  </div>
+</div>
+</template>
+
+<template id="mock-source">
+<div class="mock-dashboard">
+  <div data-testid="stSidebar" class="mock-sidebar">
+    <h2>Mission Controls</h2>
+    <p class="small-label">Theme</p>
+    <div data-baseweb="select"><div class="mock-select">Dark</div></div>
+    <p>Data source</p>
+    <div role="radiogroup">
+      <label><input type="radio" checked /> Live NOAA JSON</label>
+      <label><input type="radio" /> Local CSV</label>
+    </div>
+    <button class="mock-button">Refresh now</button>
+  </div>
+
+  <main class="stApp mock-main">
+    <div class="block-container">
+      <h1>Solar Flare Dashboard</h1>
+      <div class="subtitle">Aditya-L1 SoLEXS</div>
+
+      <div class="flare-legend">
+        <span class="flare-chip" style="--chip:#2fb344">A</span>
+        <span class="flare-chip" style="--chip:#2fb344">B</span>
+        <span class="flare-chip" style="--chip:#1c7ed6">C</span>
+        <span class="flare-chip" style="--chip:#f08c00">M</span>
+        <span class="flare-chip" style="--chip:#e03131">X</span>
+        <span class="flare-legend-note">A &lt; B &lt; C &lt; M &lt; X &nbsp;·&nbsp; each step = 10&times; more X-ray output</span>
+      </div>
+
+      <div class="flare-scale">
+        <div class="flare-scale-track">
+          <span class="flare-zone" style="--zone:#2fb344">A</span>
+          <span class="flare-zone" style="--zone:#2fb344">B</span>
+          <span class="flare-zone" style="--zone:#1c7ed6">C</span>
+          <span class="flare-zone" style="--zone:#f08c00">M</span>
+          <span class="flare-zone" style="--zone:#e03131">X</span>
+          <span class="flare-marker" style="left:47.6%;--marker:#1c7ed6">
+            <span class="flare-marker-dot"></span>
+            <span class="flare-marker-label">C2.4</span>
+          </span>
+        </div>
+        <div class="flare-scale-axis">
+          <span style="left:0%">10⁻⁸</span>
+          <span style="left:20%">10⁻⁷</span>
+          <span style="left:40%">10⁻⁶</span>
+          <span style="left:60%">10⁻⁵</span>
+          <span style="left:80%">10⁻⁴</span>
+          <span class="end" style="left:100%">10⁻³ W/m²</span>
+        </div>
+      </div>
+
+      <div data-testid="stHorizontalBlock" class="mock-row">
+        <div data-testid="column" class="mock-col">
+          <span class="status-dot"></span><strong>Satellite Status:</strong> Operational
+        </div>
+        <div data-testid="column" class="mock-col">Current UTC Time: 2026-09-18 09:40</div>
+        <div data-testid="column" class="mock-col">Last Updated: 2026-09-18 09:40</div>
+        <div data-testid="column" class="mock-col">Latest Timestamp: 2026-09-18 09:39</div>
+      </div>
+
+      <div data-testid="stHorizontalBlock" class="mock-row">
+        <div data-testid="column" class="mock-col">
+          <div class="dashboard-card">
+            <div class="small-label">Current Flux</div>
+            <div class="big-value">C2.41e-06</div>
+            <div style="margin-top:8px; opacity:0.78;">Observed class C; Long X-ray Flux</div>
+          </div>
+        </div>
+        <div data-testid="column" class="mock-col">
+          <div class="class-card" style="background:#f08c00;">
+            <div class="small-label" style="color:white; opacity:0.9;">Predicted Flare Class</div>
+            <div class="class-letter">M</div>
+            <div class="class-caption">Confidence 78.4%</div>
+          </div>
+        </div>
+        <div data-testid="column" class="mock-col">
+          <div class="dashboard-card">
+            <div class="small-label">Prediction Confidence</div>
+            <div class="big-value">78.4%</div>
+            <div style="margin-top:8px; opacity:0.78;">CNN softmax confidence</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-testid="stHorizontalBlock" class="mock-row">
+        <div data-testid="column" class="mock-col">
+          <h2>Live X-ray Flux (Last 24 Hours)</h2>
+          <div class="js-plotly-plot" style="height:200px;border:1px dashed #1f3047;border-radius:8px;display:grid;place-items:center;color:#7a90a4;">plotly chart</div>
+        </div>
+        <div data-testid="column" class="mock-col">
+          <div class="forecast-card">
+            <div class="forecast-title">6-Hour Forecast Probability</div>
+            <div style="font-size:0.95rem;color:#9fb3c8;margin-bottom:8px;">Probability of M/X-class Flare</div>
+            <div class="forecast-value">31%</div>
+            <div style="width:100%;height:8px;background:#263a59;border-radius:4px;margin:16px 0;overflow:hidden;">
+              <div style="width:31%;height:100%;background:linear-gradient(90deg,#ff922b,#e03131);border-radius:4px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2>Recent Flare Events</h2>
+      <div class="recent-events-table-wrapper">
+        <table class="recent-events-table">
+          <thead><tr><th>Time (UTC)</th><th>Class</th><th>Peak Flux (W/m²)</th><th>Confidence</th></tr></thead>
+          <tbody>
+            <tr><td>2026-09-18 09:12</td><td><span style="background:#e03131;color:white;padding:2px 8px;border-radius:4px;font-weight:bold;">X</span></td><td>1.42e-04</td><td>91.2%</td></tr>
+            <tr><td>2026-09-18 08:41</td><td><span style="background:#f08c00;color:white;padding:2px 8px;border-radius:4px;font-weight:bold;">M</span></td><td>3.05e-05</td><td>84.0%</td></tr>
+            <tr><td>2026-09-18 07:58</td><td><span style="background:#1c7ed6;color:white;padding:2px 8px;border-radius:4px;font-weight:bold;">C</span></td><td>2.41e-06</td><td>78.4%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div data-testid="stHorizontalBlock" class="mock-row">
+        <div data-testid="column" class="mock-col">
+          <div class="dashboard-card guide-card">
+            <div class="small-label">Latest observed XRS-B value</div>
+            <div class="guide-title">Current Flux</div>
+            <div class="guide-body">The most recent one-minute GOES measurement. The letter here is derived from NOAA thresholds, not from the model.</div>
+          </div>
+        </div>
+        <div data-testid="column" class="mock-col">
+          <div class="dashboard-card guide-card">
+            <div class="small-label">CNN forecast, next hour</div>
+            <div class="guide-title">Predicted Flare Class</div>
+            <div class="guide-body">The class the CNN expects for the coming hour, with its softmax confidence.</div>
+          </div>
+        </div>
+        <div data-testid="column" class="mock-col">
+          <div class="dashboard-card guide-card">
+            <div class="small-label">M-class + X-class probability</div>
+            <div class="guide-title">M/X Forecast Watch</div>
+            <div class="guide-body">Treat it as a watch level: anything above roughly 30% is worth operator attention.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="recent-events-table-wrapper">
+        <table class="recent-events-table guide-glossary">
+          <thead><tr><th>Term</th><th>Plain-language meaning</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Solar flare</strong></td><td>A sudden release of magnetic energy in the solar corona. It heats plasma and accelerates particles, producing a burst of X-rays.</td></tr>
+            <tr><td><strong>Flare class</strong></td><td>The NOAA letter scale A &lt; B &lt; C &lt; M &lt; X. Each step is 10x the flux, and the number after the letter is the multiplier (M5.0 = 5e-5 W/m²).</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mock-metrics">
+        <div data-testid="stMetricLabel">Connection Status</div><div data-testid="stMetricValue">online</div>
+        <div data-testid="stMetricLabel">Current Data Source</div><div data-testid="stMetricValue">Live NOAA JSON</div>
+        <div data-testid="stMetricLabel">Model Status</div><div data-testid="stMetricValue">Loaded</div>
+      </div>
+    </div>
+  </main>
+</div>
+</template>
+
+<script>
+  if (isEmbed) {
+    const mode = new URLSearchParams(location.search).get("mode");
+    document.body.innerHTML = (mode === "splash"
+      ? document.getElementById("splash-source").innerHTML
+      : document.getElementById("mock-source").innerHTML);
+    document.body.classList.add("embed");
+    if (mode === "splash") document.body.classList.add("splash");
+    const vars = document.createElement("style");
+    // Mirrors apply_theme("Dark") in app.py so var(--...) resolves here too.
+    vars.textContent = `:root{--background-color:#08111f;--panel-color:#101b2f;--text-color:#f8f9fa;--muted-color:#7a90a4;--border-color:#1f3047;--shadow-color:rgba(0,0,0,0.4);}
+      /* Streamlit keeps the sidebar as a fixed rail and offsets the main area, and
+         collapses it entirely below 768px — mirror both so phone frames are honest. */
+      .mock-dashboard{min-height:100%;}
+      .mock-sidebar{position:fixed;top:0;left:0;bottom:0;width:260px;overflow:auto;}
+      .mock-main{margin-left:260px;min-width:0;}
+      @media screen and (max-width:768px){ .mock-sidebar{display:none;} .mock-main{margin-left:0;} }
+      .mock-row{display:flex;flex-wrap:wrap;gap:1rem;align-items:stretch;margin-bottom:1rem;}
+      .mock-col{min-width:0;box-sizing:border-box;}
+      .mock-select{background:var(--panel-color);border:1px solid var(--border-color);border-radius:6px;padding:8px 10px;}
+      .mock-button{background:#ff4b4b;border:0;border-radius:8px;color:#fff;padding:10px 14px;font:inherit;}
+      .mock-metrics{display:grid;grid-template-columns:auto auto;gap:8px 18px;margin-top:18px;}
+      .mock-sidebar h2{font-size:1.1rem;}
+      body.embed{margin:0;padding:0;background:var(--background-color);color:var(--text-color);}
+      /* Keep the splash pinned open so its design is inspectable in a still frame. */
+      body.embed.splash .boot-splash{animation:none !important;opacity:1 !important;visibility:visible !important;}`;
+    document.head.appendChild(vars);
+  }
+</script>
+
+<!-- Real stylesheets, in the same order app.py injects them: style.css then mobile.css -->
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="mobile.css" />
+<script>
+  // Report stylesheet load status so a failure is obvious rather than silently unstyled.
+  window.addEventListener("load", () => {
+    const status = [...document.styleSheets].map((s) => {
+      let ok = "loaded";
+      try { void s.cssRules.length; } catch (e) { ok = "CORS?"; }
+      return `${s.href ? s.href.split("/").pop() : "inline"}:${ok}:${s.cssRules ? s.cssRules.length : "?"}`;
+    });
+    document.title = "sheets => " + status.join(" | ");
+    console.log("[harness] stylesheets:", status.join(" | "), "| viewport", innerWidth + "x" + innerHeight);
+  });
+</script>
+</body>
+</html>
