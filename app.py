@@ -539,7 +539,13 @@ def render_live_dashboard(data_source: str) -> None:
             st.write("5. Cache model loading, save prediction history, and refresh automatically.")
 
         with tab_learn:
-            render_learn_tab(result, result.probabilities)
+            # Guarded: education content is reference material, so a rendering
+            # failure here must never push the monitoring view into fallback.
+            try:
+                render_learn_tab(result, result.probabilities)
+            except Exception:
+                LOGGER.exception("Solar Flare 101 tab failed to render")
+                st.info("The education panel could not render. Live monitoring above is unaffected.")
 
     except Exception as exc:
         LOGGER.exception("Dashboard failed")
@@ -573,7 +579,10 @@ def main() -> None:
     render_loading_screen()
     st.markdown(f"# {APP_TITLE}")
     st.markdown("<div class='subtitle'>Aditya-L1 SoLEXS</div>", unsafe_allow_html=True)
-    render_flare_basics()
+    try:
+        render_flare_basics()
+    except Exception:
+        LOGGER.exception("Flare primer failed to render")
 
     active_source = st.session_state["dashboard_data_source"]
 
