@@ -1,0 +1,62 @@
+# Always-on deployment: the dashboard plus Caddy for automatic HTTPS.
+#
+#   cp .env.example .env          # then set DOMAIN to your hostname
+#   docker compose up -d --build
+#
+# Only Caddy is published on the host (80/443), so the dashboard is reachable
+# exclusively through HTTPS. Caddy obtains and renews certificates for DOMAIN
+# automatically; point that hostname's A/AAAA record at this machine first and
+# make sure ports 80 and 443 are open, or certificate issuance cannot complete.
+#
+# WebSockets — which Streamlit depends on for every interaction — are proxied by
+# Caddy with no extra configuration.
+
+services:
+  dashboard:
+    build: .
+    image: solar-flare-dashboard
+    restart: unless-stopped
+    expose:
+      - "7860"
+    environment:
+      STREAMLIT_SERVER_HEADLESS: "true"
+      STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
+    volumes:
+      # Named volumes so prediction history and logs survive container rebuilds
+      # without dirtying the git checkout. Docker seeds them from the image on
+      # first use, so the bundled fallback CSV is still there.
+      - dashboard_data:/app/data
+      - dashboard_logs:/app/logs
+      # To inspect history from the host instead, swap the two lines above for:
+      #   - ./data:/app/data
+      #   - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:7860/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      - dashboard
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    environment:
+      # Falls back to Caddy's internal CA, which is fine for a local test:
+      # https://localhost will warn in the browser but still serve.
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  dashboard_data:
+  dashboard_logs:
+  caddy_data:
+  caddy_config:

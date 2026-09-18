@@ -1,0 +1,36 @@
+# Caddyfile — https://caddyserver.com/docs/caddyfile
+#
+# DOMAIN comes from .env (docker compose reads it). Caddy requests a Let's
+# Encrypt certificate for that hostname automatically and renews it forever, so
+# HTTPS is the default rather than something to configure.
+#
+# Two special cases:
+#   DOMAIN=:80          serves plain HTTP on port 80 — use this when you have no
+#                       hostname yet and are reaching the VM by IP address, since
+#                       no certificate authority issues certificates for bare IPs.
+#   DOMAIN=localhost    (the fallback) uses Caddy's internal CA for local tests.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Streamlit keeps one WebSocket open per visitor. Caddy upgrades these
+	# automatically and, with no read timeout configured, does not drop idle
+	# connections — which is exactly what a dashboard left open on a wall
+	# display needs.
+	reverse_proxy dashboard:7860
+
+	# Access logs land in the caddy_data volume (/data). Useful when debugging
+	# a certificate or proxy problem: docker compose logs -f caddy
+	log {
+		output stdout
+		format console
+	}
+
+	header {
+		# HSTS is safe here because Caddy already redirects HTTP to HTTPS.
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		# Streamlit renders inside an iframe on some hosts; keep it allowed.
+		-Server
+	}
+}

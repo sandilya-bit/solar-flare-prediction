@@ -359,6 +359,15 @@ Two honest caveats. Keep-alive **prevents** sleep; it does not reliably *wake* a
 
 Full comparison, per-host steps and the caveats that actually bite (idle windows, instance-hour quotas, bandwidth caps, custom domains) live in **[docs/deployment.md](docs/deployment.md)** — including a `Dockerfile` that works on Hugging Face Spaces, Render, Fly.io or a plain VM, a Render blueprint, and the no-server architecture for a deployment that can never sleep.
 
+**Want it to literally never sleep?** On any always-on box (Oracle Always Free, a home server, a VPS) the whole deploy is:
+
+```bash
+cp .env.example .env        # set DOMAIN to your hostname
+docker compose up -d --build
+```
+
+`docker-compose.yml` runs the dashboard plus **Caddy**, which gets and renews an HTTPS certificate for that hostname automatically — no certificate commands, no reverse-proxy tuning, and WebSocket upgrades (which Streamlit cannot work without) just work.
+
 | Host | Result | Notes |
 | --- | --- | --- |
 | **Hugging Face Spaces** (Streamlit SDK) | `https://<user>-<space>.hf.space` | Same GitHub flow; custom domains are a paid feature |

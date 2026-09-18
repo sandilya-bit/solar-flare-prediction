@@ -63,26 +63,31 @@ If a 30–60 second wake on the first visit is acceptable, a single hourly ping 
 
 The only way to remove the concept of sleeping. On Oracle's Always Free Ampere A1 (4 OCPU / 24 GB) this dashboard uses a rounding error's worth of the machine; Google's free `e2-micro` works too if you add swap.
 
+The repository ships a `docker-compose.yml` and a `Caddyfile`, so the whole deployment is three commands:
+
 ```bash
 # on the VM
 git clone https://github.com/sandilya-bit/solar-flare-prediction.git
 cd solar-flare-prediction
-docker build -t solar-flare-dashboard .
-docker run -d --name dashboard --restart unless-stopped \
-  -p 127.0.0.1:7860:7860 solar-flare-dashboard
+cp .env.example .env        # then set DOMAIN to your hostname
+docker compose up -d --build
 ```
 
-Put TLS in front of it with **Caddy** (automatic certificates, three lines):
+That starts two containers: the dashboard (deliberately **not** published on the host) and **Caddy**, which terminates TLS and obtains plus renews a Let's Encrypt certificate for `DOMAIN` automatically. Once the containers are up, every push to your fork can be deployed with `git pull && docker compose up -d --build`.
 
-```caddyfile
-your-domain.example {
-    reverse_proxy 127.0.0.1:7860
-}
+Prerequisites: the hostname's `A`/`AAAA` record already points at the machine, and ports 80 and 443 are reachable (`sudo ufw allow 80,443/tcp`). Caddy cannot obtain a certificate for a name that resolves elsewhere.
+
+**No hostname yet?** Either set `DOMAIN=:80` in `.env` and reach the box by IP over plain HTTP — no authority issues certificates for bare IP addresses — or skip domains entirely with a Cloudflare Tunnel, which needs no open ports and gives free HTTPS:
+
+```bash
+cloudflared tunnel --url http://127.0.0.1:7860
 ```
 
-WebSockets are proxied automatically by Caddy, which is essential here. If you would rather not open any inbound ports at all, use a Cloudflare Tunnel (`cloudflared tunnel --url http://127.0.0.1:7860`) instead — no firewall rules, free HTTPS on a `*.trycloudflare.com` hostname or your own domain.
+Operational notes:
 
-Remember to keep the VM patched and to allow outbound traffic to `services.swpc.noaa.gov`; the app itself needs nothing else.
+- `docker compose logs -f caddy` shows certificate and proxy errors; `docker compose pull && docker compose up -d --build` updates the app.
+- Prediction history and logs live in named volumes, so `docker compose down` keeps them and `docker compose down -v` erases them.
+- Keep the VM patched, and allow outbound traffic to `services.swpc.noaa.gov`; the app needs nothing else.
 
 ## Option 4 — No server at all
 
