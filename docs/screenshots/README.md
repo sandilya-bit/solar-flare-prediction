@@ -35,12 +35,8 @@ README only need one line uncommented.
 
 ## Tips
 
-- Hide the Streamlit toolbar for cleaner captures by adding a project config:
-  ```toml
-  # .streamlit/config.toml
-  [client]
-  toolbarMode = "minimal"
-  ```
+- The project already ships `.streamlit/config.toml` with `toolbarMode = "minimal"`, so
+  the deploy/menu chrome stays out of your captures. Nothing to configure.
 - Do not press `c` while the dashboard is focused — that is Streamlit's *clear cache*
   shortcut, not a way to hide the toolbar.
 - Capture *after* the first prediction renders; on a cold start the cards briefly show

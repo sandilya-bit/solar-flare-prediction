@@ -1,0 +1,23 @@
+# Project-level Streamlit configuration.
+#
+# The theme block matches the dashboard's own CSS variables, so Streamlit's
+# chrome (sidebar, widgets, spinners) is consistent with the custom styling and
+# the very first painted frame is dark — no white flash before style.css lands,
+# which is what makes the boot splash look seamless on a cold start.
+#
+# Switching the in-app Theme selector to "Light" restyles the custom components
+# from CSS variables; if you prefer light chrome by default, set base = "light".
+
+[theme]
+base = "dark"
+primaryColor = "#ff922b"
+backgroundColor = "#08111f"
+secondaryBackgroundColor = "#101b2f"
+textColor = "#f8f9fa"
+
+[client]
+# Hides the Deploy/menu chrome — cleaner screenshots, fewer distractions.
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

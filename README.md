@@ -8,6 +8,9 @@
 [![Data](https://img.shields.io/badge/data-NOAA%20GOES%20XRS-1C7ED6)](https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json)
 [![Live app](https://img.shields.io/badge/live%20app-Streamlit%20Cloud-FF922B?logo=streamlit&logoColor=white)](https://solar-flare-prediction-xrexehawlkmvueretyrj8t.streamlit.app/)
 
+**Live app →** <https://solar-flare-prediction-xrexehawlkmvueretyrj8t.streamlit.app/>
+*(free Streamlit Community Cloud instance — if it has gone to sleep, the first visit takes about 30 seconds to wake)*
+
 This dashboard reads the **two GOES X-ray Sensor channels** (XRS-A 0.05–0.4 nm and XRS-B 0.1–0.8 nm) at one-minute cadence, feeds the most recent **60-minute window** through a 1D convolutional neural network, and reports the **flare class expected in the next hour** — alongside what is happening right now. It keeps working when NOAA is unreachable, and it teaches a first-time visitor how to read every number on the screen.
 
 ---
@@ -303,23 +306,40 @@ Raw NetCDF archives and the preprocessed training arrays are intentionally **not
 
 ## Deploy it yourself
 
-The app is a single Streamlit service with no secrets to configure — NOAA's endpoint is public.
+The app is a single Streamlit service with **no secrets to configure** — NOAA's endpoint is public. Everything the build needs is already committed:
 
-**Streamlit Community Cloud (free)**
+| File | Why it is there |
+| --- | --- |
+| `requirements.txt` | `--extra-index-url .../whl/cpu` so pip installs CPU-only PyTorch instead of the multi-gigabyte CUDA wheel |
+| `.streamlit/config.toml` | Dark theme matching the dashboard, minimal toolbar, usage stats off |
+| `runtime.txt` | Pins Python 3.12 so every wheel resolves |
+| `models/`, `data/` | Checkpoint, scaler and fallback CSV so a fresh clone runs immediately |
 
-1. Push this repository to GitHub.
-2. Go to <https://share.streamlit.io> → **New app**.
-3. Pick the repository and branch, set **Main file path** to `app.py`, and deploy.
-4. Optional: append your own `*.streamlit.app` subdomain.
+### Streamlit Community Cloud — free, about two minutes
 
-Two things to know about free hosting:
+1. Sign in at <https://share.streamlit.io> **with GitHub** (OAuth).
+2. **Create app** → *Deploy a public app from GitHub*.
+3. Repository `sandilya-bit/solar-flare-prediction`, Branch `main`, **Main file path** `app.py`.
+4. Optional: **Advanced settings → Python version** → `3.12`.
+5. **Deploy.** The first build takes 3–6 minutes and then prints your URL:
+   `https://<your-name>.streamlit.app`.
+6. Rename it: app menu (**⋮**) → **Settings → General → App URL**.
 
-- **Pin CPU-only PyTorch.** Unpinned, pip resolves a CUDA build on Linux — a multi-gigabyte download that regularly times out free builds. Add to `requirements.txt`:
-  ```
-  --extra-index-url https://download.pytorch.org/whl/cpu
-  torch==2.2.2+cpu
-  ```
-- **The filesystem is ephemeral.** `data/prediction_history.csv`, `data/last_success_prediction.json` and `logs/` reset whenever the container is rebuilt or wakes from sleep. The dashboard degrades gracefully, but history will not persist — move it to a hosted database if you need durability. A `.streamlit/config.toml` with `base = "dark"` and `primaryColor = "#ff922b"` also removes the white flash before the stylesheet loads.
+Every later `git push` to `main` redeploys automatically, which is the easiest way to publish updates.
+
+### Free-tier behaviour worth knowing
+
+- **It sleeps when idle.** The next visitor waits ~30 seconds while the instance wakes; subsequent requests are fast.
+- **The filesystem is ephemeral.** `data/prediction_history.csv`, `data/last_success_prediction.json` and `logs/` reset on every rebuild or wake. The dashboard degrades gracefully, but history does not persist — move it to a hosted database if you need durability.
+- **Memory is capped (~1 GB class).** CPU inference on a 270 KB checkpoint is trivial, so this app fits comfortably; a second heavy model would not.
+
+### Alternatives, also free
+
+| Host | Result | Notes |
+| --- | --- | --- |
+| **Hugging Face Spaces** (Streamlit SDK) | `https://<user>-<space>.hf.space` | Same GitHub flow; custom domains are a paid feature |
+| **Render** free web service | `https://<name>.onrender.com` | Supports a custom domain for free, but spins down when idle (~1 min cold start) |
+| Shared PHP hosts (InfinityFree, iFreeDomains, …) | — | Cannot run Streamlit: no long-running Python process, no WebSockets, no pip |
 
 ---
 

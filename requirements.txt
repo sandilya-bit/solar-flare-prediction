@@ -1,3 +1,9 @@
+# CPU-only PyTorch: the default Linux wheel on PyPI bundles multi-gigabyte CUDA
+# libraries, which is the usual reason a free-tier build times out. This extra
+# index publishes +cpu builds and pip prefers them (a local version sorts above
+# the plain one), so a CPU-only local install is unaffected.
+--extra-index-url https://download.pytorch.org/whl/cpu
+
 numpy>=1.19.0
 pandas>=1.1.0
 torch>=1.9.0
