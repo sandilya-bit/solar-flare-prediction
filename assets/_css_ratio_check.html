@@ -264,6 +264,13 @@ if (!isEmbed) {
 <link rel="stylesheet" href="style.css" />
 <link rel="stylesheet" href="mobile.css" />
 <script>
+  // The harness exists to check CSS as it is being edited, so never reuse a
+  // cached copy: re-request both sheets with a per-load cache buster.
+  document.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
+    link.href = link.href.split("?")[0] + "?v=" + Date.now();
+  });
+</script>
+<script>
   // Report stylesheet load status so a failure is obvious rather than silently unstyled.
   window.addEventListener("load", () => {
     const status = [...document.styleSheets].map((s) => {

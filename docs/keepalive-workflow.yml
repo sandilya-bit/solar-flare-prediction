@@ -1,0 +1,68 @@
+# Keep-alive workflow — ACTIVATE BY MOVING THIS FILE
+#
+# This file lives in docs/ rather than .github/workflows/ on purpose. GitHub
+# rejects any push that creates or edits a file under .github/workflows/ unless
+# the credential used has the "workflow" scope, and this repository is pushed
+# with a personal access token that does not. Keeping it here means the file is
+# versioned and reviewable while remaining inert.
+#
+# Activate it in one of two ways:
+#
+#   1. No token changes — paste it through the web UI:
+#      github.com/sandilya-bit/solar-flare-prediction -> Add file -> Create new file
+#      Path: .github/workflows/keepalive.yml   (type the slashes; GitHub creates the folders)
+#      Paste this file's body (everything from "name:" down) and commit.
+#
+#   2. With the workflow scope — add it to your token, then:
+#      git mv docs/keepalive-workflow.yml .github/workflows/keepalive.yml
+#      git commit -m "Activate the keep-alive workflow" && git push
+#
+# Why it works: Streamlit Community Cloud hibernates an app after 12 hours
+# without traffic, and a visit counts as traffic. Four visits a day stays well
+# inside that window, so visitors never meet the "gone to sleep" screen.
+#
+# Point it elsewhere without editing the file: repository Settings ->
+# Secrets and variables -> Actions -> Variables -> new variable named APP_URL
+# (do that after renaming the app's subdomain in Streamlit Cloud).
+
+name: Keep the live app warm
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    name: Visit the deployed app
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Wake and verify
+        env:
+          APP_URL: ${{ vars.APP_URL || 'https://solar-flare-prediction-xrexehawlkmvueretyrj8t.streamlit.app/' }}
+        run: |
+          set -uo pipefail
+          echo "Visiting $APP_URL"
+
+          for attempt in 1 2 3; do
+            code=$(curl -sS -L -o /dev/null -w '%{http_code}' --max-time 120 "$APP_URL" || echo 000)
+            echo "attempt $attempt -> HTTP $code"
+            case "$code" in
+              200)
+                echo "App answered 200 — it is warm."
+                exit 0
+                ;;
+              4*)
+                echo "::error::HTTP $code from $APP_URL — the app URL is wrong or the app was deleted."
+                exit 1
+                ;;
+            esac
+            sleep 25
+          done
+
+          # A 5xx or a timeout here usually just means a free instance was still
+          # waking when the job gave up. Warn instead of failing the run.
+          echo "::warning::No 200 from $APP_URL. The instance may still be waking, or the URL changed."

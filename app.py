@@ -66,6 +66,36 @@ SOURCE_LABELS = {
     "local_netcdf": "Latest local NetCDF",
 }
 
+# Rendered once per session while the first live prediction is being built, so a
+# cold container (or a freshly woken one) paints structure immediately instead
+# of a blank page. Cleared the moment real telemetry is ready.
+LIVE_SKELETON_HTML = """
+<div class="skeleton-wrap" role="status" aria-live="polite" aria-label="Loading live telemetry">
+  <div class="skeleton-row">
+    <div class="skeleton-card">
+      <span class="skeleton-line w45"></span>
+      <span class="skeleton-line tall w70"></span>
+      <span class="skeleton-line w55"></span>
+    </div>
+    <div class="skeleton-card">
+      <span class="skeleton-line w50"></span>
+      <span class="skeleton-line tall w60"></span>
+      <span class="skeleton-line w40"></span>
+    </div>
+    <div class="skeleton-card">
+      <span class="skeleton-line w40"></span>
+      <span class="skeleton-line tall w65"></span>
+      <span class="skeleton-line w45"></span>
+    </div>
+  </div>
+  <div class="skeleton-card wide">
+    <span class="skeleton-line w25"></span>
+    <span class="skeleton-block"></span>
+  </div>
+  <div class="skeleton-note">Connecting to NOAA GOES &middot; warming the model &middot; running the next-hour forecast</div>
+</div>
+"""
+
 
 @st.cache_data(ttl=REFRESH_INTERVAL_SECONDS, show_spinner=False)
 def cached_live_goes_data(url: str) -> LiveDataResult:
@@ -413,6 +443,13 @@ def render_live_dashboard(data_source: str) -> None:
     top_a, top_b, top_c, top_d = st.columns(4)
     top_b.write(f"Current UTC Time: {format_utc(utc_now())}")
 
+    # Show layout immediately on the first paint of a session. The placeholder is
+    # emptied once telemetry is ready, and skipped on later auto-refreshes so a
+    # 60-second rerun never flickers.
+    skeleton = st.empty()
+    if not st.session_state.get("live_view_ready"):
+        skeleton.markdown(LIVE_SKELETON_HTML, unsafe_allow_html=True)
+
     try:
         model_path, fallback_data_path, scaler_path, metadata_path = resolve_inputs()
         model_stamp = file_cache_stamp(model_path)
@@ -469,6 +506,8 @@ def render_live_dashboard(data_source: str) -> None:
         top_c.write(f"Last Updated: {format_utc(utc_now()) if connection_status == 'online' else 'Live data unavailable'}")
         top_d.write(f"Latest Timestamp: {latest_timestamp or result.window_end}")
 
+        skeleton.empty()
+        st.session_state["live_view_ready"] = True
         render_status_panel(connection_status, data_source, latest_timestamp, model_path, True)
         st.caption(f"{connection_message} | Source detail: {NOAA_GOES_XRAY_JSON_URL if data_source == 'live_noaa_json' else fallback_data_path}")
 
@@ -549,6 +588,8 @@ def render_live_dashboard(data_source: str) -> None:
 
     except Exception as exc:
         LOGGER.exception("Dashboard failed")
+        skeleton.empty()
+        st.session_state["live_view_ready"] = True
         st.error(f"Dashboard could not load: {exc}")
         last_df, last_result, last_success_time = load_last_success()
         if last_result is not None:

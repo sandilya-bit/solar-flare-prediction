@@ -118,6 +118,7 @@ The number after the letter is the position *inside* the decade: **M5.0 = 5.0 ×
 - **Responsive ratio engine**: ultra-wide, cinematic 21:9, short laptop, portrait, tall phone, landscape phone and ultra-narrow breakpoints, plus safe-area insets and dynamic viewport units.
 - **Premium motion layer**: staggered card entrances, table row cascades, hover sheen, animated heading rules — all disabled automatically under `prefers-reduced-motion`.
 - **Themed boot splash** on first load, drawn entirely in CSS, gone in under three seconds.
+- **Skeleton first paint**: after the splash, a shimmering layout placeholder is shown until the session's first prediction exists, so a cold or freshly woken container never presents a blank page. Later 60-second refreshes render straight from cache and skip it.
 - **Solar Flare 101 education tab**: GOES scale bar with a live marker, class table, interactive flux decoder, a per-panel reading guide, an honest limitations section, NOAA R/S/G hazard table and a glossary.
 - A collapsed **"New here? Solar flares in 60 seconds"** primer sits under the title, so newcomers get oriented without disturbing the operational view.
 
@@ -332,6 +333,27 @@ Every later `git push` to `main` redeploys automatically, which is the easiest w
 - **It sleeps when idle.** The next visitor waits ~30 seconds while the instance wakes; subsequent requests are fast.
 - **The filesystem is ephemeral.** `data/prediction_history.csv`, `data/last_success_prediction.json` and `logs/` reset on every rebuild or wake. The dashboard degrades gracefully, but history does not persist — move it to a hosted database if you need durability.
 - **Memory is capped (~1 GB class).** CPU inference on a 270 KB checkpoint is trivial, so this app fits comfortably; a second heavy model would not.
+
+### Keeping it permanently awake (no wake-up screen)
+
+Community Cloud hibernates an app after **12 hours without traffic** — and a visit counts as traffic, so no database or paid plan is involved. This repository ships the ready-made job at [`docs/keepalive-workflow.yml`](docs/keepalive-workflow.yml): it **visits the app every 6 hours**, comfortably inside that window.
+
+It sits in `docs/` rather than `.github/workflows/` because GitHub rejects any push that creates a file under `.github/workflows/` unless the pushing credential carries the `workflow` scope — and this repo is pushed with a token that does not. Move it into place one of two ways:
+
+1. **No token changes** — through the web UI: *Add file → Create new file*, path `.github/workflows/keepalive.yml`, paste the body from `name:` down, commit.
+2. **With the `workflow` scope** on your token:
+   ```bash
+   git mv docs/keepalive-workflow.yml .github/workflows/keepalive.yml
+   git commit -m "Activate the keep-alive workflow" && git push
+   ```
+
+| Need | Do this |
+| --- | --- |
+| App URL changed (renamed subdomain) | Repo → **Settings → Secrets and variables → Actions → Variables** → new variable `APP_URL`. The workflow prefers it over the built-in default |
+| Keep-alive without GitHub (or without touching the repo) | A free [UptimeRobot](https://uptimerobot.com/) HTTP monitor on the same URL, hourly — same effect, plus email alerts when the app really is down. This is the zero-setup option: works the moment the app exists |
+| A hard guarantee | Remove the concept of sleeping: run the same `streamlit run app.py` on an always-on host such as an Oracle Cloud Always Free ARM VM (behind Caddy/Nginx), or mirror it to a Hugging Face Space, whose free idle window is longer than Community Cloud's |
+
+Two honest caveats. Keep-alive **prevents** sleep; it does not reliably *wake* a sleeping app, because the sleep screen wants a human click — so keep the interval well under 12 hours. And GitHub can delay scheduled runs during busy periods, so treat this as "rarely sleeps" rather than "never sleeps". If the workflow ever reports a 4xx, the app URL is wrong and needs the `APP_URL` variable above.
 
 ### Alternatives, also free
 
