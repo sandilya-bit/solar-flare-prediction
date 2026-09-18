@@ -13,6 +13,18 @@ Streamlit Community Cloud is the least-effort option, but it is not the only one
 | A **stable HTTPS URL** | the whole point | — |
 | A writable directory *(optional)* | otherwise `data/prediction_history.csv` and `logs/` reset | every free tier |
 
+## Pick your host in 30 seconds
+
+| If you want… | Go to | Setup time | What you end up with |
+| --- | --- | --- | --- |
+| A live link *right now* | [Option 0 — Streamlit Community Cloud](#option-0--streamlit-community-cloud-fastest) | ~2 min, 6 clicks | `https://<name>.streamlit.app` |
+| Free and unlikely to be asleep when someone opens it | [Option 1 — Hugging Face Spaces](#option-1--hugging-face-spaces-docker-sdk) | ~3 min + one command | `https://<user>-<space>.hf.space` |
+| A free custom domain | [Option 2 — Render](#option-2--render) | ~5 min | `https://<name>.onrender.com` |
+| No wake-up at all, ever | [Option 3 — Always-on VM](#option-3--always-on-vm) | ~15 min | `https://your-domain` |
+| Instant by construction | [Option 4 — No server](#option-4--no-server-at-all) | a day (rewrite) | static site, cannot sleep |
+
+Everything below the tables is per-host detail; the repository already contains the config each path needs.
+
 ## Options at a glance
 
 Limits verified September 2026 — check the providers, they change.
@@ -26,6 +38,19 @@ Limits verified September 2026 — check the providers, they change.
 | **Google Cloud e2-micro** (free tier) | yes | **never** | 1 vCPU / 1 GB | yes | always-on but RAM-tight; add swap |
 | **Cloudflare Pages / GitHub Pages** | yes | n/a | n/a | yes | static only — cannot run Streamlit (see [the no-server option](#option-4--no-server-at-all)) |
 | PHP shared hosts (InfinityFree, iFreeDomains…) | yes | n/a | n/a | yes | cannot run the app; fine as a landing page or redirect |
+
+## Option 0 — Streamlit Community Cloud (fastest)
+
+The simplest path, and everything it needs is already committed: the CPU-only PyTorch index in `requirements.txt`, `.streamlit/config.toml` and `runtime.txt`.
+
+1. Sign in at <https://share.streamlit.io> with GitHub.
+2. **Create app** → *Deploy a public app from GitHub*.
+3. Repository `sandilya-bit/solar-flare-prediction`, branch `main`, **Main file path** `app.py`.
+4. *Advanced settings → Python version*: `3.12`.
+5. **Deploy** — the first build takes 3–6 minutes.
+6. Rename the link: **⋮ → Settings → General → App URL**.
+
+Afterwards every push to `main` redeploys automatically. It sleeps after 12 hours without traffic (see [keeping any host warm](#keeping-any-host-warm)) and its filesystem is ephemeral, so prediction history resets on rebuild.
 
 ## Option 1 — Hugging Face Spaces (Docker SDK)
 
