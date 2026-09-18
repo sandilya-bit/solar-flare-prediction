@@ -1,0 +1,26 @@
+# Render blueprint — https://render.com/docs/blueprint-spec
+#
+# Dashboard → New → Blueprint → pick this repository. Render reads this file and
+# creates the service below on the free plan. The image is built from the
+# Dockerfile, so the Streamlit version comes from requirements.txt.
+#
+# Free-plan reality (September 2026): a web service spins down after 15 minutes
+# without inbound traffic — HTTP requests and WebSocket messages both count —
+# and wakes in ~30-60 s. The workspace gets 750 instance-hours and 5 GB of
+# bandwidth per month. An hourly keep-alive visit fits inside both, but if you
+# want the app to stay warm continuously you need roughly one visit every ten
+# minutes (see docs/deployment.md).
+
+services:
+  - type: web
+    name: solar-flare-dashboard
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /_stcore/health
+    autoDeploy: true
+    envVars:
+      - key: STREAMLIT_SERVER_HEADLESS
+        value: "true"
+      - key: STREAMLIT_BROWSER_GATHER_USAGE_STATS
+        value: "false"

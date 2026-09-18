@@ -1,0 +1,18 @@
+# Keep the image lean: everything the running app needs (app.py, src/, assets/,
+# data/, models/, config.py) is included; the rest is development tooling.
+.git
+.gitignore
+.github
+.devcontainer
+.venv
+venv
+__pycache__
+*.pyc
+logs
+tests
+docs/screenshots
+assets/_css_ratio_check.html
+README.md
+REORGANIZATION_SUMMARY.md
+Dockerfile
+.dockerignore

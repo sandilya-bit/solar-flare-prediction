@@ -357,6 +357,8 @@ Two honest caveats. Keep-alive **prevents** sleep; it does not reliably *wake* a
 
 ### Alternatives, also free
 
+Full comparison, per-host steps and the caveats that actually bite (idle windows, instance-hour quotas, bandwidth caps, custom domains) live in **[docs/deployment.md](docs/deployment.md)** — including a `Dockerfile` that works on Hugging Face Spaces, Render, Fly.io or a plain VM, a Render blueprint, and the no-server architecture for a deployment that can never sleep.
+
 | Host | Result | Notes |
 | --- | --- | --- |
 | **Hugging Face Spaces** (Streamlit SDK) | `https://<user>-<space>.hf.space` | Same GitHub flow; custom domains are a paid feature |
